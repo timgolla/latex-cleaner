@@ -15,7 +15,7 @@ Known limitations:
 Warning: no warranties whatsoever. Use at your own risk. Make backups!
 
 ## Usage
-python latex-cleaner.py inputdir
+python latex_cleaner.py inputdir
 
 ## Background: 
 I found that other tools didn't copy all files necessery for my project. I thus wrote this small tool, which copies all the files for me, but tends to have more false positives.
