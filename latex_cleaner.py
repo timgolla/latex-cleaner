@@ -37,7 +37,7 @@ def latex_clean(args):
                 tex_files.append(current_file)
             else:
                 other_files.append(current_file)
-    s = ""
+    tex_contents = []
     for i in range(len(tex_files)):
         texfilename = os.path.join(args.inputdir, tex_files[i])
         f = open(texfilename, "r", errors=args.errors)
@@ -57,9 +57,9 @@ def latex_clean(args):
             outfile = open(outfilename, "w")
             outfile.write(cleanedstring)
             outfile.close()
-            s += cleanedstring
+            tex_contents.append(cleanedstring)
         else:
-            s += f.read()
+            tex_contents.append(f.read())
             shutil.copy2(os.path.join(args.inputdir, texfilename), outfilename)
         f.close()
     used = np.zeros(len(other_files), dtype=bool)
@@ -74,9 +74,11 @@ def latex_clean(args):
             e = e.lower()
             if ext.lower().endswith(e):
                 kp = True
-        if kp or myf in s:
-            used[i] = True
-            notfound[i] = False
+        for s in tex_contents:
+            if kp or myf in s:
+                used[i] = True
+                notfound[i] = False
+                break
     other_files = np.array(other_files)
     print("\nused files:")
     usedfiles = other_files[used]
