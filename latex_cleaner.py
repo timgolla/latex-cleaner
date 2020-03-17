@@ -91,7 +91,8 @@ def latex_clean(args):
         f = used_files_out[i]
         outfilename = os.path.join(args.outputdir, f)
         os.makedirs(os.path.dirname(outfilename), exist_ok=True)
-        shutil.copy2(os.path.join(args.inputdir, used_files_in[i]), outfilename)
+        shutil.copy2(os.path.join(
+            args.inputdir, used_files_in[i]), outfilename)
     for i in range(len(tex_files_in)):
         outfilename = os.path.join(args.outputdir, tex_files_out[i])
         os.makedirs(os.path.dirname(outfilename), exist_ok=True)
