@@ -35,6 +35,8 @@ def latex_clean(args):
             current_filename_in = current_filename_in.replace("\\", "/")
             current_filename_in = current_filename_in.lstrip("./")
             current_filename_out = current_filename_in
+            if args.remove_subdirs:
+                current_filename_out = current_filename_out.replace("/","_")
             myf, ext = os.path.splitext(current_filename_in)
             if (ext.lower() in tex_exts):
                 tex_files_in.append(current_filename_in)
@@ -43,6 +45,8 @@ def latex_clean(args):
                 other_files_in.append(current_filename_in)
                 other_files_out.append(current_filename_out)
     tex_contents = []
+    all_files_in = tex_files_in + other_files_in
+    all_files_out = tex_files_out + other_files_out
     for i in range(len(tex_files_in)):
         texfilename = os.path.join(args.inputdir, tex_files_in[i])
         f = open(texfilename, "r", errors=args.errors)
@@ -60,6 +64,9 @@ def latex_clean(args):
             tex_contents.append(cleanedstring)
         else:
             tex_contents.append(f.read())
+        if args.remove_subdirs:
+            for j in range(len(all_files_in)):
+                tex_contents[i] = tex_contents[i].replace(all_files_in[j],all_files_out[j])
         f.close()
     used = np.zeros(len(other_files_in), dtype=bool)
     notfound = np.ones(len(other_files_in), dtype=bool)
