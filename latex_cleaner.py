@@ -41,8 +41,6 @@ def latex_clean(args):
     for i in range(len(tex_files)):
         texfilename = os.path.join(args.inputdir, tex_files[i])
         f = open(texfilename, "r", errors=args.errors)
-        outfilename = os.path.join(args.outputdir, tex_files[i])
-        os.makedirs(os.path.dirname(outfilename), exist_ok=True)
         if not args.keep_comments:
             cleanedstring = ""
             lines = f.readlines()
@@ -54,13 +52,9 @@ def latex_clean(args):
                     l = re.sub("%.*\n", "\n", l)
                     if not l.isspace():  # this check is necessary in order not to add unwanted line breaks
                         cleanedstring += l
-            outfile = open(outfilename, "w")
-            outfile.write(cleanedstring)
-            outfile.close()
             tex_contents.append(cleanedstring)
         else:
             tex_contents.append(f.read())
-            shutil.copy2(os.path.join(args.inputdir, texfilename), outfilename)
         f.close()
     used = np.zeros(len(other_files), dtype=bool)
     notfound = np.ones(len(other_files), dtype=bool)
@@ -90,6 +84,15 @@ def latex_clean(args):
         outfilename = os.path.join(args.outputdir, f)
         os.makedirs(os.path.dirname(outfilename), exist_ok=True)
         shutil.copy2(os.path.join(args.inputdir, f), outfilename)
+    for i in range(len(tex_files)):
+        outfilename = os.path.join(args.outputdir, tex_files[i])
+        os.makedirs(os.path.dirname(outfilename), exist_ok=True)
+        if not args.keep_comments:
+            outfile = open(outfilename, "w")
+            outfile.write(tex_contents[i])
+            outfile.close()
+        else:
+            shutil.copy2(os.path.join(args.inputdir, texfilename), outfilename)
 
 
 def main():
