@@ -21,25 +21,30 @@ def latex_clean(args):
         args.outputdir = inputdir + "_cleaned"
     shutil.rmtree(args.outputdir, ignore_errors=True)
     os.makedirs(args.outputdir, exist_ok=True)
-    tex_files = []
-    other_files = []
+    tex_files_in = []
+    tex_files_out = []
+    other_files_in = []
+    other_files_out = []
     tex_exts = []
     for ext in args.tex_exts:
         tex_exts.append(ext.lower())
     for root, dirs, files in os.walk(args.inputdir):
         reldir = os.path.relpath(root, start=args.inputdir)
         for file in files:
-            current_file = os.path.join(reldir, file)
-            current_file = current_file.replace("\\", "/")
-            current_file = current_file.lstrip("./")
-            myf, ext = os.path.splitext(current_file)
+            current_filename_in = os.path.join(reldir, file)
+            current_filename_in = current_filename_in.replace("\\", "/")
+            current_filename_in = current_filename_in.lstrip("./")
+            current_filename_out = current_filename_in
+            myf, ext = os.path.splitext(current_filename_in)
             if (ext.lower() in tex_exts):
-                tex_files.append(current_file)
+                tex_files_in.append(current_filename_in)
+                tex_files_out.append(current_filename_out)
             else:
-                other_files.append(current_file)
+                other_files_in.append(current_filename_in)
+                other_files_out.append(current_filename_out)
     tex_contents = []
-    for i in range(len(tex_files)):
-        texfilename = os.path.join(args.inputdir, tex_files[i])
+    for i in range(len(tex_files_in)):
+        texfilename = os.path.join(args.inputdir, tex_files_in[i])
         f = open(texfilename, "r", errors=args.errors)
         if not args.keep_comments:
             cleanedstring = ""
@@ -56,10 +61,10 @@ def latex_clean(args):
         else:
             tex_contents.append(f.read())
         f.close()
-    used = np.zeros(len(other_files), dtype=bool)
-    notfound = np.ones(len(other_files), dtype=bool)
-    for i in range(len(other_files)):
-        myf, ext = os.path.splitext(other_files[i])
+    used = np.zeros(len(other_files_in), dtype=bool)
+    notfound = np.ones(len(other_files_in), dtype=bool)
+    for i in range(len(other_files_in)):
+        myf, ext = os.path.splitext(other_files_in[i])
         kp = False
         for pref in args.keep_prefixes:
             if myf.startswith(pref):
@@ -73,19 +78,22 @@ def latex_clean(args):
                 used[i] = True
                 notfound[i] = False
                 break
-    other_files = np.array(other_files)
+    other_files_in = np.array(other_files_in)
+    other_files_out = np.array(other_files_out)
     print("\nused files:")
-    usedfiles = other_files[used]
-    print(usedfiles)
+    used_files_in = other_files_in[used]
+    used_files_out = other_files_out[used]
+    print(used_files_in)
     print("\nunused files:")
-    unusedfiles = other_files[notfound]
+    unusedfiles = other_files_in[notfound]
     print(unusedfiles)
-    for f in usedfiles:
+    for i in range(len(used_files_in)):
+        f = used_files_out[i]
         outfilename = os.path.join(args.outputdir, f)
         os.makedirs(os.path.dirname(outfilename), exist_ok=True)
-        shutil.copy2(os.path.join(args.inputdir, f), outfilename)
-    for i in range(len(tex_files)):
-        outfilename = os.path.join(args.outputdir, tex_files[i])
+        shutil.copy2(os.path.join(args.inputdir, used_files_in[i]), outfilename)
+    for i in range(len(tex_files_in)):
+        outfilename = os.path.join(args.outputdir, tex_files_out[i])
         os.makedirs(os.path.dirname(outfilename), exist_ok=True)
         if not args.keep_comments:
             outfile = open(outfilename, "w")
