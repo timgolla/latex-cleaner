@@ -108,6 +108,8 @@ def main():
         ".tex"], help="Extensions of tex files - these are parsed for includes and always kept.")
     parser.add_argument("--keep_comments", action="store_true",
                         help="By default, remove all comments. This switch keeps them.")
+    parser.add_argument("--remove_subdirs", action="store_true",
+                        help="Copy all relevant files into the root directory, renames the respective files and changes the includes accordingly.")
     parser.add_argument("--errors", default=None,
                         help="How to handle read errors. See the documentation of Python's open.")
     args = parser.parse_args()
