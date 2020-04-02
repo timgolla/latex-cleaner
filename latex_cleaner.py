@@ -21,28 +21,37 @@ def latex_clean(args):
         args.outputdir = inputdir + "_cleaned"
     shutil.rmtree(args.outputdir, ignore_errors=True)
     os.makedirs(args.outputdir, exist_ok=True)
-    tex_files = []
-    other_files = []
+    tex_files_in = []
+    tex_files_out = []
+    other_files_in = []
+    other_files_out = []
     tex_exts = []
     for ext in args.tex_exts:
         tex_exts.append(ext.lower())
     for root, dirs, files in os.walk(args.inputdir):
         reldir = os.path.relpath(root, start=args.inputdir)
         for file in files:
-            current_file = os.path.join(reldir, file)
-            current_file = current_file.replace("\\", "/")
-            current_file = current_file.lstrip("./")
-            myf, ext = os.path.splitext(current_file)
+            current_filename_in = os.path.join(reldir, file)
+            current_filename_in = current_filename_in.replace("\\", "/")
+            current_filename_in = current_filename_in.lstrip("./")
+            current_filename_out = current_filename_in
+            if args.eliminate_subdirs:
+                current_filename_out = current_filename_out.replace("/", "_")
+            myf, ext = os.path.splitext(current_filename_in)
             if (ext.lower() in tex_exts):
-                tex_files.append(current_file)
+                tex_files_in.append(current_filename_in)
+                tex_files_out.append(current_filename_out)
             else:
-                other_files.append(current_file)
-    s = ""
-    for i in range(len(tex_files)):
-        texfilename = os.path.join(args.inputdir, tex_files[i])
+                other_files_in.append(current_filename_in)
+                other_files_out.append(current_filename_out)
+    tex_contents = []
+    all_files_in = tex_files_in + other_files_in
+    all_files_in = sorted(all_files_in, key=len)[::-1]
+    all_files_out = tex_files_out + other_files_out
+    all_files_out = sorted(all_files_out, key=len)[::-1]
+    for i in range(len(tex_files_in)):
+        texfilename = os.path.join(args.inputdir, tex_files_in[i])
         f = open(texfilename, "r", errors=args.errors)
-        outfilename = os.path.join(args.outputdir, tex_files[i])
-        os.makedirs(os.path.dirname(outfilename), exist_ok=True)
         if not args.keep_comments:
             cleanedstring = ""
             lines = f.readlines()
@@ -54,18 +63,19 @@ def latex_clean(args):
                     l = re.sub("%.*\n", "\n", l)
                     if not l.isspace():  # this check is necessary in order not to add unwanted line breaks
                         cleanedstring += l
-            outfile = open(outfilename, "w")
-            outfile.write(cleanedstring)
-            outfile.close()
-            s += cleanedstring
+            tex_contents.append(cleanedstring)
         else:
-            s += f.read()
-            shutil.copy2(os.path.join(args.inputdir, texfilename), outfilename)
+            tex_contents.append(f.read())
+        if args.eliminate_subdirs:
+            for j in range(len(all_files_in)):
+                fin, ext = os.path.splitext(all_files_in[j])
+                fout, ext = os.path.splitext(all_files_out[j])
+                tex_contents[i] = tex_contents[i].replace(fin, fout)
         f.close()
-    used = np.zeros(len(other_files), dtype=bool)
-    notfound = np.ones(len(other_files), dtype=bool)
-    for i in range(len(other_files)):
-        myf, ext = os.path.splitext(other_files[i])
+    used = np.zeros(len(other_files_in), dtype=bool)
+    notfound = np.ones(len(other_files_in), dtype=bool)
+    for i in range(len(other_files_out)):
+        myf, ext = os.path.splitext(other_files_out[i])
         kp = False
         for pref in args.keep_prefixes:
             if myf.startswith(pref):
@@ -74,20 +84,35 @@ def latex_clean(args):
             e = e.lower()
             if ext.lower().endswith(e):
                 kp = True
-        if kp or myf in s:
-            used[i] = True
-            notfound[i] = False
-    other_files = np.array(other_files)
+        for s in tex_contents:
+            if kp or myf in s:
+                used[i] = True
+                notfound[i] = False
+                break
+    other_files_in = np.array(other_files_in)
+    other_files_out = np.array(other_files_out)
     print("\nused files:")
-    usedfiles = other_files[used]
-    print(usedfiles)
+    used_files_in = other_files_in[used]
+    used_files_out = other_files_out[used]
+    print(used_files_in)
     print("\nunused files:")
-    unusedfiles = other_files[notfound]
+    unusedfiles = other_files_in[notfound]
     print(unusedfiles)
-    for f in usedfiles:
+    for i in range(len(used_files_in)):
+        f = used_files_out[i]
         outfilename = os.path.join(args.outputdir, f)
         os.makedirs(os.path.dirname(outfilename), exist_ok=True)
-        shutil.copy2(os.path.join(args.inputdir, f), outfilename)
+        shutil.copy2(os.path.join(
+            args.inputdir, used_files_in[i]), outfilename)
+    for i in range(len(tex_files_in)):
+        outfilename = os.path.join(args.outputdir, tex_files_out[i])
+        os.makedirs(os.path.dirname(outfilename), exist_ok=True)
+        if not args.keep_comments:
+            outfile = open(outfilename, "w")
+            outfile.write(tex_contents[i])
+            outfile.close()
+        else:
+            shutil.copy2(os.path.join(args.inputdir, texfilename), outfilename)
 
 
 def main():
@@ -103,6 +128,8 @@ def main():
         ".tex"], help="Extensions of tex files - these are parsed for includes and always kept.")
     parser.add_argument("--keep_comments", action="store_true",
                         help="By default, remove all comments. This switch keeps them.")
+    parser.add_argument("--eliminate_subdirs", action="store_true",
+                        help="Copy all relevant files into the root directory, rename the respective files and changes the includes accordingly. I.e. create a flat hierarchy. Useful for submission systems that don't allow directory hieararchies.")
     parser.add_argument("--errors", default=None,
                         help="How to handle read errors. See the documentation of Python's open.")
     args = parser.parse_args()
