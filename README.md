@@ -5,6 +5,7 @@ What it does:
 1. It collects all filenames in the input folder.
 2. It scans all .tex files, removes comments (can be deactivated) and writes them to the output folder.
 3. Scans if filenames of the other files in the input folder have been mentioned in the .tex files. If so, copy. Ignores extensions.
+4. Optionall it can eliminate subdirectories by renaming files in subdirectories to give them unique names, copying them to the root directory and changing the references in the .tex files.
 
 Known limitations: 
 - Currently assumes that all includes are relative to the input folder.
