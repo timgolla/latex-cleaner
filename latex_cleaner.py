@@ -35,7 +35,7 @@ def latex_clean(args):
             current_filename_in = current_filename_in.replace("\\", "/")
             current_filename_in = current_filename_in.lstrip("./")
             current_filename_out = current_filename_in
-            if args.remove_subdirs:
+            if args.eliminate_subdirs:
                 current_filename_out = current_filename_out.replace("/", "_")
             myf, ext = os.path.splitext(current_filename_in)
             if (ext.lower() in tex_exts):
@@ -66,7 +66,7 @@ def latex_clean(args):
             tex_contents.append(cleanedstring)
         else:
             tex_contents.append(f.read())
-        if args.remove_subdirs:
+        if args.eliminate_subdirs:
             for j in range(len(all_files_in)):
                 fin, ext = os.path.splitext(all_files_in[j])
                 fout, ext = os.path.splitext(all_files_out[j])
@@ -128,8 +128,8 @@ def main():
         ".tex"], help="Extensions of tex files - these are parsed for includes and always kept.")
     parser.add_argument("--keep_comments", action="store_true",
                         help="By default, remove all comments. This switch keeps them.")
-    parser.add_argument("--remove_subdirs", action="store_true",
-                        help="Copy all relevant files into the root directory, renames the respective files and changes the includes accordingly.")
+    parser.add_argument("--eliminate_subdirs", action="store_true",
+                        help="Copy all relevant files into the root directory, rename the respective files and changes the includes accordingly. I.e. create a flat hierarchy. Useful for submission systems that don't allow directory hieararchies.")
     parser.add_argument("--errors", default=None,
                         help="How to handle read errors. See the documentation of Python's open.")
     args = parser.parse_args()
